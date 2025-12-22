@@ -30,7 +30,9 @@ typedef struct
     uint32_t remaining_ms;
     uint8_t priority;
     uint8_t active;
+    uint8_t ready; 
 } scheduler_task_t;
+
 
 /* Task table */
 static scheduler_task_t task_table[SCHEDULER_MAX_TASKS];
@@ -80,5 +82,26 @@ int scheduler_add_task(scheduler_task_fn_t task_fn,
     task_count++;
 
     return (task_count - 1); /* Return task ID */
+}
+//=================================================================================
+void scheduler_tick(void)
+{
+    uint8_t i;
+
+    for (i = 0; i < task_count; i++)
+    {
+        if (task_table[i].active)
+        {
+            if (task_table[i].remaining_ms > SCHEDULER_TICK_MS)
+            {
+                task_table[i].remaining_ms -= SCHEDULER_TICK_MS;
+            }
+            else
+            {
+                task_table[i].remaining_ms = 0;
+                task_table[i].ready = 1;
+            }
+        }
+    }
 }
 //=================================================================================

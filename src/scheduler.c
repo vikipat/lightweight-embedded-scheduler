@@ -105,3 +105,34 @@ void scheduler_tick(void)
     }
 }
 //=================================================================================
+void scheduler_run(void)
+{
+    uint8_t i;
+    int selected = -1;
+    uint8_t highest_priority = 0xFF;
+
+    /* Find highest-priority ready task */
+    for (i = 0; i < task_count; i++)
+    {
+        if (task_table[i].active && task_table[i].ready)
+        {
+            if (task_table[i].priority < highest_priority)
+            {
+                highest_priority = task_table[i].priority;
+                selected = i;
+            }
+        }
+    }
+
+    /* Execute selected task */
+    if (selected >= 0)
+    {
+        task_table[selected].task_fn();
+
+        /* Re-arm periodic task */
+        task_table[selected].remaining_ms =
+            task_table[selected].period_ms;
+
+        task_table[selected].ready = 0;
+    }
+}

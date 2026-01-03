@@ -84,3 +84,9 @@ int scheduler_add_task(void (*task_fn)(void),
 void scheduler_tick(void);
 void scheduler_run(void);
 
+
+## Architecture
+
+![Scheduler Architecture](docs/scheduler_architecture.png)
+
+

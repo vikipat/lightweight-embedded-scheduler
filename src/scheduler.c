@@ -30,7 +30,8 @@ typedef struct
     uint32_t remaining_ms;
     uint8_t priority;
     uint8_t active;
-    uint8_t ready; 
+    uint8_t ready;
+    uint8_t running;   
 } scheduler_task_t;
 
 
@@ -49,6 +50,7 @@ void scheduler_init(void)
         task_table[i].remaining_ms = 0;
         task_table[i].priority    = 0;
         task_table[i].active      = 0;
+        task_table[i].running     = 0;
     }
 
     task_count = 0;
@@ -72,6 +74,11 @@ int scheduler_add_task(scheduler_task_fn_t task_fn,
     {
         return -1;
     }
+    if (priority > 10)
+    {
+        return -1;
+    }
+
 
     task_table[task_count].task_fn      = task_fn;
     task_table[task_count].period_ms   = period_ms;
@@ -87,6 +94,12 @@ int scheduler_add_task(scheduler_task_fn_t task_fn,
 void scheduler_tick(void)
 {
     uint8_t i;
+
+
+    if (task_count == 0)
+    {
+        return;
+    }
 
     for (i = 0; i < task_count; i++)
     {
@@ -111,6 +124,13 @@ void scheduler_run(void)
     int selected = -1;
     uint8_t highest_priority = 0xFF;
 
+    if (task_count == 0)
+    {
+        return;
+    }
+
+
+
     /* Find highest-priority ready task */
     for (i = 0; i < task_count; i++)
     {
@@ -127,12 +147,20 @@ void scheduler_run(void)
     /* Execute selected task */
     if (selected >= 0)
     {
-        task_table[selected].task_fn();
+        if (task_table[selected].running == 0)
+        {
+            task_table[selected].running = 1;
 
-        /* Re-arm periodic task */
-        task_table[selected].remaining_ms =
-            task_table[selected].period_ms;
+            task_table[selected].task_fn();
 
-        task_table[selected].ready = 0;
+            task_table[selected].running = 0;
+
+            /* Re-arm periodic task */
+            task_table[selected].remaining_ms =
+                task_table[selected].period_ms;
+
+            task_table[selected].ready = 0;
+        }
     }
+
 }
